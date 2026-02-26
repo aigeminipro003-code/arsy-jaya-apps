@@ -1,0 +1,203 @@
+@import "tailwindcss";
+@theme {
+  --color-bg-primary: #080810;
+  --color-bg-secondary: #0f0f1a;
+  --color-bg-card: #141420;
+  --color-bg-card-hover: #1a1a2e;
+  --color-border: #1e1e3a;
+  --color-border-bright: #2a2a4a;
+  --color-text-primary: #f0f0ff;
+  --color-text-secondary: #8888aa;
+  --color-text-muted: #55556a;
+  --color-accent: #1E4FD8;
+  --color-accent-dim: rgba(30, 79, 216, 0.12);
+  --color-brand-red: #B33B3D;
+  --color-brand-red-dim: rgba(179, 59, 61, 0.12);
+  --color-machine-omajic: #3B82F6;
+  --color-machine-roland: #F97316;
+  --color-machine-flatbed: #A855F7;
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  /* 8px spacing grid */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 40px;
+  --sp-8: 48px;
+}
+
+[data-theme='light'] {
+  --color-bg-primary: #f8fafc;
+  --color-bg-secondary: #ffffff;
+  --color-bg-card: #ffffff;
+  --color-bg-card-hover: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-border-bright: #cbd5e1;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+  /* Accent color disesuaikan agar tidak terlalu pucat di background putih */
+  --color-accent: #1d4ed8;
+  /* Tailwind blue-700 */
+  --color-accent-dim: rgba(29, 78, 216, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  font-family: var(--font-sans);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-bright);
+  border-radius: 99px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0);
+  }
+
+  50% {
+    box-shadow: 0 0 16px 4px rgba(34, 211, 238, 0.15);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% center;
+  }
+
+  100% {
+    background-position: -200% center;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease both;
+}
+
+.animate-slide-in {
+  animation: slideInRight 0.3s ease both;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Touch-friendly tap target */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Mobile responsive grid utilities */
+.grid-auto-1 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.grid-auto-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.grid-auto-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 767px) {
+
+  html,
+  body {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent any horizontal overflow */
+  #root {
+    overflow-x: hidden;
+  }
+
+  /* All multi-col grids collapse to 1 on mobile */
+  .grid-auto-2,
+  .grid-auto-3 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Reduce page heading sizes on small screens */
+  .page-title {
+    font-size: 20px !important;
+  }
+
+  /* Wider scrollbar area on touch */
+  ::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+}
