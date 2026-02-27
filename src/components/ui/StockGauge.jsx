@@ -4,8 +4,8 @@ export default function StockGauge({ material }) {
     const { name, width_cm, total_stock_m, min_stock_m } = material
     const max = Math.max(total_stock_m * 1.5, min_stock_m * 3, 50)
     const pct = Math.max(0, Math.min(100, (total_stock_m / max) * 100))
-    const isLow = total_stock_m < min_stock_m
-    const isCritical = total_stock_m < 5
+    const isLow = total_stock_m <= min_stock_m
+    const isCritical = total_stock_m <= (min_stock_m * 0.5) || total_stock_m === 0
 
     const barColor = isCritical
         ? 'var(--color-danger)'

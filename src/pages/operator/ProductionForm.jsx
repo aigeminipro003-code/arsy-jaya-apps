@@ -134,6 +134,9 @@ export default function ProductionForm() {
         ? wasteOrderM.toFixed(2)
         : wasteNonOrder
 
+    // Periksa apakah bahan yang mau dipakai melebihi stok yang ada
+    const exceedsStock = selectedMaterial && finalBrutoM > selectedMaterial.total_stock_m
+
     useEffect(() => {
         supabase.from('machines').select('*').order('name').then(({ data }) => setMachines(data || []))
         supabase.from('materials').select('*').order('name').then(({ data }) => setMaterials(data || []))
@@ -143,6 +146,11 @@ export default function ProductionForm() {
         if (!selectedMachine || !selectedMaterial || !selectedCategory) return
         if (isOrderMode && !orderValid) return
         if (!isOrderMode && !nonOrderValid) return
+
+        if (finalBrutoM > selectedMaterial.total_stock_m) {
+            toast('Stok bahan tidak mencukupi untuk produksi ini!', 'error')
+            return
+        }
 
         setSubmitting(true)
         const payload = {
@@ -175,7 +183,7 @@ export default function ProductionForm() {
         ? (MACHINES_STYLES[selectedMachine.name] || { color: '#1E4FD8', gradient: 'linear-gradient(135deg,#1E4FD8,#B33B3D)', glow: 'rgba(30,79,216,0.2)' })
         : null
 
-    const canProceedToConfirm = isOrderMode ? orderValid : nonOrderValid
+    const canProceedToConfirm = (isOrderMode ? orderValid : nonOrderValid) && !exceedsStock
 
     return (
         <div className="animate-fade-in" style={{ maxWidth: isMobile ? '100%' : 640, margin: '0 auto' }}>
@@ -383,6 +391,16 @@ export default function ProductionForm() {
                                             <AlertTriangle size={12} /> Netto tidak boleh lebih besar dari Bruto
                                         </div>
                                     )}
+                                </div>
+                            )}
+
+                            {/* Warning over-stock */}
+                            {exceedsStock && (
+                                <div style={{ marginTop: 16, padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10 }}>
+                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--color-danger)', fontSize: 13, fontWeight: 600 }}>
+                                        <AlertTriangle size={14} />
+                                        Input Bruto {(finalBrutoM).toFixed(2)}m melebihi stok yang ada ({selectedMaterial.total_stock_m}m).
+                                    </div>
                                 </div>
                             )}
                         </div>
