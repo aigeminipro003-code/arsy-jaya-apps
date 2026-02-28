@@ -86,7 +86,8 @@ export default function OperatorDashboard() {
     }, [])
 
     const now = new Date()
-    const greeting = now.getHours() < 12 ? 'Selamat Pagi' : now.getHours() < 17 ? 'Selamat Siang' : 'Selamat Sore'
+    const hitHour = now.getHours()
+    const greeting = hitHour < 10 ? 'Selamat Pagi' : hitHour < 15 ? 'Selamat Siang' : hitHour < 18 ? 'Selamat Sore' : 'Selamat Malam'
 
     if (loading) return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
@@ -125,7 +126,7 @@ export default function OperatorDashboard() {
                                 <Printer size={28} color="rgba(255,255,255,0.9)" strokeWidth={1.5} />
                                 <div>
                                     <div style={{ fontWeight: 800, fontSize: 16, color: '#fff', letterSpacing: '-0.02em' }}>{machine.name}</div>
-                                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>Tap untuk log produksi</div>
+                                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>{machine.description || 'Tap untuk log produksi'}</div>
                                 </div>
                                 <ChevronRight size={16} color="rgba(255,255,255,0.5)" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)' }} />
                             </button>
