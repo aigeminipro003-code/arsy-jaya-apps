@@ -160,7 +160,7 @@ export default function HistoryEditor() {
         setMaterials(mt || [])
 
         let q = supabase.from('production_logs')
-            .select('*, profiles(display_name), machines(name), materials(name)')
+            .select('*, profiles(display_name), machines(name), materials(name, width_cm)')
             .order('created_at', { ascending: false })
             .limit(200)
         if (dateFrom) q = q.gte('created_at', dateFrom)
@@ -339,7 +339,10 @@ export default function HistoryEditor() {
                                                 </td>
                                                 <td style={tdStyle}>{log.profiles?.display_name}</td>
                                                 <td style={tdStyle}>{log.machines?.name}</td>
-                                                <td style={tdStyle}>{log.materials?.name}</td>
+                                                <td style={tdStyle}>
+                                                    {log.materials?.name}
+                                                    {log.materials?.width_cm ? <span style={{ opacity: 0.6, fontSize: 11, marginLeft: 4 }}>({log.materials.width_cm}cm)</span> : ''}
+                                                </td>
                                                 <td style={tdStyle}>
                                                     <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: `${CATEGORY_COLORS[log.category]}18`, color: CATEGORY_COLORS[log.category] }}>
                                                         {CATEGORY_LABELS[log.category] ?? log.category}

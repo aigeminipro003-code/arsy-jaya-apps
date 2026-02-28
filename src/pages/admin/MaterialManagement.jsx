@@ -7,9 +7,9 @@ import { useBreakpoint } from '../../hooks/useBreakpoint'
 import { Plus, Edit2, Trash2, PackagePlus, SlidersHorizontal, Eye, EyeOff, X, History, User, ChevronDown, ChevronUp } from 'lucide-react'
 import StockGauge from '../../components/ui/StockGauge'
 
-const EMPTY_FORM = { name: '', width_cm: '', min_stock_m: '5', price_per_m: '' }
 const EMPTY_STOCK = { panjang_per_roll: '', jumlah_roll: '', satuan_harga: 'per_m', harga_per_satuan: '' }
 const EMPTY_ADJUST = { stok_aktual: '', alasan: '' }
+const EMPTY_FORM = { name: '', width_cm: '', min_stock_m: '5', satuan_harga: 'per_m', input_harga: '', panjang_per_roll: '' }
 
 function Modal({ title, children, onClose }) {
     return createPortal(
@@ -80,7 +80,17 @@ export default function MaterialManagement() {
     useEffect(() => { load() }, [])
 
     function openCreate() { setForm(EMPTY_FORM); setEditModal('create') }
-    function openEdit(m) { setForm({ name: m.name, width_cm: m.width_cm, min_stock_m: m.min_stock_m, price_per_m: m.price_per_m }); setEditModal(m) }
+    function openEdit(m) {
+        setForm({
+            name: m.name,
+            width_cm: m.width_cm,
+            min_stock_m: m.min_stock_m,
+            satuan_harga: 'per_m',
+            input_harga: m.price_per_m || '',
+            panjang_per_roll: ''
+        })
+        setEditModal(m)
+    }
     function openStock(m) {
         setStockForm({ ...EMPTY_STOCK, harga_per_satuan: m.price_per_m ? String(m.price_per_m) : '' })
         setStockModal(m)
@@ -105,7 +115,24 @@ export default function MaterialManagement() {
     async function handleSaveMaterial(e) {
         e.preventDefault()
         setSaving(true)
-        const payload = { name: form.name, width_cm: parseFloat(form.width_cm) || 0, min_stock_m: parseFloat(form.min_stock_m) || 5, price_per_m: parseFloat(form.price_per_m) || 0 }
+
+        // Hitung harga per meter jika mode per_roll
+        let finalPricePerMeter = 0
+        const inputHrg = parseFloat(form.input_harga) || 0
+        if (form.satuan_harga === 'per_roll') {
+            const pjg = parseFloat(form.panjang_per_roll) || 1 // hindari bagi nol
+            finalPricePerMeter = inputHrg / pjg
+        } else {
+            finalPricePerMeter = inputHrg
+        }
+
+        const payload = {
+            name: form.name,
+            width_cm: parseFloat(form.width_cm) || 0,
+            min_stock_m: parseFloat(form.min_stock_m) || 5,
+            price_per_m: finalPricePerMeter
+        }
+
         let error
         if (editModal === 'create') {
             ({ error } = await supabase.from('materials').insert(payload))
@@ -270,7 +297,44 @@ export default function MaterialManagement() {
                         <div><label style={labelStyle}>Nama Bahan</label><input required style={inputStyle} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Contoh: Vinyl Gloss" /></div>
                         <div><label style={labelStyle}>Lebar (cm)</label><input type="number" min="0" step="0.1" required style={inputStyle} value={form.width_cm} onChange={e => setForm({ ...form, width_cm: e.target.value })} placeholder="160" /></div>
                         <div><label style={labelStyle}>Minimum Stok (m)</label><input type="number" min="0" step="0.1" required style={inputStyle} value={form.min_stock_m} onChange={e => setForm({ ...form, min_stock_m: e.target.value })} placeholder="5" /></div>
-                        <div><label style={labelStyle}>Harga Beli / Meter (Rp)</label><input type="number" min="0" style={inputStyle} value={form.price_per_m} onChange={e => setForm({ ...form, price_per_m: e.target.value })} placeholder="15000" /></div>
+
+                        <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 16 }}>
+                            <label style={labelStyle}>Harga Beli Acuan</label>
+                            {/* Toggle per_m / per_roll */}
+                            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                                {[['per_m', 'Per Meter'], ['per_roll', 'Per Roll']].map(([val, lbl]) => (
+                                    <button
+                                        key={val} type="button" onClick={() => setForm({ ...form, satuan_harga: val })}
+                                        style={{
+                                            flex: 1, padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                                            cursor: 'pointer', border: '1px solid',
+                                            borderColor: form.satuan_harga === val ? 'var(--color-accent)' : 'var(--color-border)',
+                                            background: form.satuan_harga === val ? 'var(--color-accent-dim)' : 'var(--color-bg-secondary)',
+                                            color: form.satuan_harga === val ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                        }}
+                                    >
+                                        {lbl}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {form.satuan_harga === 'per_roll' && (
+                                <div style={{ marginBottom: 10 }}>
+                                    <input type="number" min="0.1" step="0.1" required style={inputStyle} value={form.panjang_per_roll} onChange={e => setForm({ ...form, panjang_per_roll: e.target.value })} placeholder="Panjang per 1 Roll (Contoh: 50m)" />
+                                </div>
+                            )}
+
+                            <div>
+                                <input type="number" min="0" style={inputStyle} value={form.input_harga} onChange={e => setForm({ ...form, input_harga: e.target.value })} placeholder={form.satuan_harga === 'per_m' ? 'Rp harga per meter' : 'Rp harga total per 1 roll'} />
+                            </div>
+
+                            {form.satuan_harga === 'per_roll' && parseFloat(form.input_harga) > 0 && parseFloat(form.panjang_per_roll) > 0 && (
+                                <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 8, padding: '6px 10px', background: 'var(--color-bg-secondary)', borderRadius: 6, display: 'inline-block' }}>
+                                    Disimpan sebagai: <b>Rp{Math.round(parseFloat(form.input_harga) / parseFloat(form.panjang_per_roll)).toLocaleString('id-ID')}/m</b>
+                                </div>
+                            )}
+                        </div>
+
                         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                             <button type="button" onClick={() => setEditModal(null)} style={{ flex: 1, padding: '12px', borderRadius: 8, background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)', fontWeight: 600, cursor: 'pointer' }}>Batal</button>
                             <button type="submit" disabled={saving} style={{ flex: 2, padding: '12px', borderRadius: 8, background: 'linear-gradient(135deg, #1E4FD8, #B33B3D)', border: 'none', color: '#000', fontWeight: 700, cursor: 'pointer' }}>{saving ? 'Menyimpan...' : 'Simpan'}</button>

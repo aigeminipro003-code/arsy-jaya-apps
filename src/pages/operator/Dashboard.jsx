@@ -63,7 +63,7 @@ export default function OperatorDashboard() {
     useEffect(() => {
         async function load() {
             const [{ data: m }, { data: mat }, { data: l }] = await Promise.all([
-                supabase.from('machines').select('*').order('name'),
+                supabase.from('machines').select('*').eq('is_active', true).order('name'),
                 supabase.from('materials').select('*').order('name'),
                 supabase.from('production_logs')
                     .select('*, profiles(display_name), machines(name), materials(name)')

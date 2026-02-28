@@ -138,7 +138,7 @@ export default function ProductionForm() {
     const exceedsStock = selectedMaterial && finalBrutoM > selectedMaterial.total_stock_m
 
     useEffect(() => {
-        supabase.from('machines').select('*').order('name').then(({ data }) => setMachines(data || []))
+        supabase.from('machines').select('*').eq('is_active', true).order('name').then(({ data }) => setMachines(data || []))
         supabase.from('materials').select('*').order('name').then(({ data }) => setMaterials(data || []))
     }, [])
 
