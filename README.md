@@ -1,16 +1,43 @@
-# React + Vite
+# ⚡ Arsy Jaya APPS Pro
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
 
-Currently, two official plugins are available:
+**Arsy Jaya APPS Pro** adalah sistem manajemen produksi dan inventaris kustom yang dirancang khusus untuk industri percetakan. Aplikasi ini berfokus pada presisi pelacakan bahan (Net vs Bruto) dan efisiensi tim secara real-time.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## ✨ Filosofi Desain: "Simple but Different"
+Aplikasi ini dibangun dengan pendekatan **perfectionist-oriented**:
+- **Dark Factory Mode:** UI yang nyaman di mata untuk lingkungan produksi.
+- **Precision Tracking:** Perhitungan otomatis sisa bahan (Waste) hingga digit desimal terkecil.
+- **Kiosk-Style Input:** Tombol besar dan responsif untuk memudahkan operator di area mesin (Omajic, Roland, Flatbed).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Fitur Utama
 
-## Expanding the ESLint configuration
+### 👨‍💼 Admin Dashboard
+- **Production Intelligence:** Pantau efisiensi produksi (%) dan rasio waste harian.
+- **Fuel-Gauge Inventory:** Visualisasi stok bahan dengan indikator warna (Kritis, Warning, Aman).
+- **Export Power:** Generate laporan produksi ke format CSV dalam satu klik.
+- **Audit Trail:** Transparansi penuh dengan catatan alasan setiap kali ada perubahan data.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 👷 Operator Tools
+- **Fast Logging:** Input meteran gambar (Net) dan meteran bahan (Bruto) dengan keypad yang dioptimalkan.
+- **Live Team Feed:** Pantau progres produksi tim secara real-time tanpa akses edit yang berisiko.
+- **Low Stock Alert:** Informasi stok bahan terkini agar tidak terjadi keterlambatan produksi.
+
+## 🛠️ Stack Teknologi
+- **Frontend:** React.js dengan Vite (Super Fast Build).
+- **Styling:** Tailwind CSS (Custom Dark Theme).
+- **Icons:** Lucide-React (Minimalist style).
+- **Database & Auth:** Supabase (PostgreSQL) dengan Row Level Security (RLS).
+
+## 📦 Instalasi & Pengembangan
+
+Jika Anda ingin menjalankan proyek ini secara lokal:
+
+1. Clone repositori:
+   ```bash
+   git clone [https://github.com/username/arsy-jaya-apps.git](https://github.com/username/arsy-jaya-apps.git)
