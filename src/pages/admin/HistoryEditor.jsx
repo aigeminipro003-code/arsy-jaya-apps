@@ -418,7 +418,10 @@ export default function HistoryEditor() {
                                                     <span>{nama}</span>
                                                 </div>
                                             </td>
-                                            <td style={{ ...tdStyle, fontWeight: 600 }}>{l.materials?.name ?? '—'}</td>
+                                            <td style={{ ...tdStyle, fontWeight: 600 }}>
+                                                {l.materials?.name ?? '—'}
+                                                {l.materials?.width_cm ? <span style={{ opacity: 0.6, fontSize: 11, marginLeft: 4 }}>({l.materials.width_cm}cm)</span> : ''}
+                                            </td>
                                             <td style={{ ...tdStyle, textAlign: 'center' }}>{l.rolls}</td>
                                             <td style={{ ...tdStyle, textAlign: 'center' }}>{l.panjang_per_roll}m</td>
                                             <td style={{ ...tdStyle, fontWeight: 700, color: '#22c55e' }}>+{Number(l.quantity_m).toLocaleString('id-ID')}m</td>
