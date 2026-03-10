@@ -1,17 +1,19 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { LayoutDashboard, PlusCircle, Clock, Package, Users, FileText, Download } from 'lucide-react'
+import { LayoutDashboard, PlusCircle, Clock, Package, Users, FileText, Download, PenTool } from 'lucide-react'
 
 const operatorTabs = [
     { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
     { to: '/team-history', icon: Clock, label: 'Riwayat', exact: false },
     { to: '/materials', icon: Package, label: 'Bahan', exact: false },
+    { to: '/machine-logs', icon: PenTool, label: 'Log Mesin', exact: false },
 ]
 
 const adminTabs = [
     { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', exact: true },
     { to: '/admin/materials', icon: Package, label: 'Bahan', exact: false },
     { to: '/admin/users', icon: Users, label: 'User', exact: false },
+    { to: '/machine-logs', icon: PenTool, label: 'Log Mesin', exact: false },
     { to: '/admin/history', icon: FileText, label: 'Riwayat', exact: false },
     { to: '/admin/export', icon: Download, label: 'Export', exact: false },
 ]

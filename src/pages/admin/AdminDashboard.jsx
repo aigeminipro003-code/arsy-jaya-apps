@@ -93,12 +93,13 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         async function load() {
+            const getLocalYMD = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
             const today = new Date()
-            today.setHours(0, 0, 0, 0)
-            const todayStr = today.toISOString().split('T')[0]
+            const todayStr = getLocalYMD(today)
 
             const sevenDaysAgo = new Date(today)
             sevenDaysAgo.setDate(today.getDate() - 6)
+            sevenDaysAgo.setHours(0, 0, 0, 0)
 
             const [{ data: mat }, { data: logs }, { data: movements }, { data: adjustments }, { data: settings }] = await Promise.all([
                 supabase.from('materials').select('*').order('total_stock_m'),
@@ -149,8 +150,8 @@ export default function AdminDashboard() {
             const byMaterial = Object.values(byMat).sort((a, b) => b.totalSpend - a.totalSpend)
 
             setMaterials(matList)
-            // Aman memfilter log khusus hari ini
-            const todayLogsFiltered = logList.filter(l => l && l.created_at && l.created_at.startsWith(todayStr))
+            // Aman memfilter log khusus hari ini menggunakan Local Time
+            const todayLogsFiltered = logList.filter(l => l && l.created_at && getLocalYMD(new Date(l.created_at)) === todayStr)
             setRecentLogs(todayLogsFiltered)
             setAdjustmentLogs(adjustments || [])
             setFinance({ totalSpend, totalMeter, totalRollBeli, byMaterial })
@@ -160,7 +161,7 @@ export default function AdminDashboard() {
             for (let i = 6; i >= 0; i--) {
                 const d = new Date(today)
                 d.setDate(today.getDate() - i)
-                const dStr = d.toISOString().split('T')[0]
+                const dStr = getLocalYMD(d)
                 const labelDate = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
                 dailyStats[dStr] = { date: labelDate, Net: 0, Waste: 0 }
             }
@@ -169,13 +170,15 @@ export default function AdminDashboard() {
 
             let todayNet = 0, todayWaste = 0, todayBruto = 0, yesterdayWaste = 0
 
-            const yesterdayStr = (() => { const d = new Date(today); d.setDate(today.getDate() - 1); return d.toISOString().split('T')[0] })()
+            const yesterdayStr = (() => { const d = new Date(today); d.setDate(today.getDate() - 1); return getLocalYMD(d) })()
 
             logList.forEach(l => {
                 const createdDate = l?.created_at
                 if (!createdDate) return
 
-                const dayKey = createdDate.split('T')[0]
+                const logLocalD = new Date(createdDate)
+                const dayKey = getLocalYMD(logLocalD)
+
                 const net = parseFloat(l.panjang_netto) || 0
                 const w = parseFloat(l.waste) || 0
                 const b = parseFloat(l.bahan_bruto) || 0
