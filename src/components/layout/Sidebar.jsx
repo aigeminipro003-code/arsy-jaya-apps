@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import {
     LayoutDashboard, Printer, Clock, Users, Package,
-    FileEdit, Download, LogOut, Mail, Cpu, Sun, Moon
+    FileEdit, Download, LogOut, Mail, Cpu, Sun, Moon, PenTool
 } from 'lucide-react'
 
 const s = {
@@ -98,6 +98,7 @@ export default function Sidebar() {
                         <NavItem to="/" end icon={LayoutDashboard} label="Dashboard" />
                         <NavItem to="/team-history" icon={Clock} label="Riwayat Tim" />
                         <NavItem to="/materials" icon={Package} label="Stok Bahan" />
+                        <NavItem to="/machine-logs" icon={PenTool} label="Log Mesin" />
                     </>
                 )}
 
@@ -107,8 +108,9 @@ export default function Sidebar() {
                         <NavItem to="/admin" end icon={LayoutDashboard} label="Dashboard" />
                         <NavItem to="/admin/materials" icon={Package} label="Manajemen Bahan" />
                         <NavItem to="/admin/machines" icon={Cpu} label="Manajemen Mesin" />
+                        <NavItem to="/machine-logs" icon={PenTool} label="Log Mesin" />
                         <NavItem to="/admin/users" icon={Users} label="Manajemen User" />
-                        <NavItem to="/admin/history" icon={FileEdit} label="Edit Riwayat" />
+                        <NavItem to="/admin/history" icon={FileEdit} label="Riwayat" />
                         <NavItem to="/admin/export" icon={Download} label="Export CSV" />
                     </>
                 )}
