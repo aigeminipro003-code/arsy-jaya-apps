@@ -9,12 +9,6 @@
 
 ---
 
-## ✨ Filosofi Desain: "Simple but Different"
-Aplikasi ini dibangun dengan pendekatan **perfectionist-oriented**:
-- **Dark Factory Mode:** UI yang nyaman di mata untuk lingkungan produksi.
-- **Precision Tracking:** Perhitungan otomatis sisa bahan (Waste) hingga digit desimal terkecil.
-- **Kiosk-Style Input:** Tombol besar dan responsif untuk memudahkan operator di area mesin (Omajic, Roland, Flatbed).
-
 ## 🚀 Fitur Utama
 
 ### 👨‍💼 Admin Dashboard
