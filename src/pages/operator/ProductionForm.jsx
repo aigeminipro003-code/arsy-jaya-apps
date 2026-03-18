@@ -6,6 +6,8 @@ import { useToast } from '../../components/ui/Toast'
 import { useBreakpoint } from '../../hooks/useBreakpoint'
 import NumericKeypad from '../../components/ui/NumericKeypad'
 import { ArrowLeft, ChevronRight, CheckCircle, AlertTriangle, Calculator } from 'lucide-react'
+import OrderLayoutPreview from '../../components/ui/OrderLayoutPreview'
+import LengthUsagePreview from '../../components/ui/LengthUsagePreview'
 
 const MACHINES_STYLES = {
     'Omajic UV': { color: '#3B82F6', gradient: 'linear-gradient(135deg, #3B82F6, #1d4ed8)', glow: 'rgba(59,130,246,0.25)' },
@@ -35,7 +37,8 @@ function StepIndicator({ current, total }) {
 }
 
 // Compact number input helpers for Order mode
-function DimInput({ label, value, onChange, unit = 'cm', suffix }) {
+function DimInput({ label, value, onChange, unit = 'cm', suffix, step = '0.1', min = '0', integer = false }) {
+    const safeValue = value === null || value === undefined ? '' : value
     return (
         <div>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
@@ -43,9 +46,16 @@ function DimInput({ label, value, onChange, unit = 'cm', suffix }) {
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: 10, overflow: 'hidden' }}>
                 <input
-                    type="number" min="0" step="0.1"
-                    value={value}
-                    onChange={e => onChange(e.target.value)}
+                    type="number" min={min} step={step}
+                    value={safeValue}
+                    onChange={e => {
+                        const raw = e.target.value
+                        if (!integer) return onChange(raw)
+                        if (raw === '') return onChange('')
+                        const n = parseFloat(raw)
+                        if (Number.isNaN(n)) return onChange('')
+                        onChange(String(Math.round(n)))
+                    }}
                     placeholder="0"
                     style={{
                         flex: 1, padding: '12px 14px', background: 'transparent', border: 'none',
@@ -81,12 +91,12 @@ export default function ProductionForm() {
     const [orderPanjang, setOrderPanjang] = useState('')   // cm
     const [orderLebar, setOrderLebar] = useState('')       // cm
     const [jumlahLembar, setJumlahLembar] = useState('')  // pcs
+    const [orderMarginCm, setOrderMarginCm] = useState('1') // cm (margin sisi kiri/kanan)
+    const [orderGapCm, setOrderGapCm] = useState('1') // cm (gap antar netto)
 
     // ── NON-ORDER mode: direct meter/cm input ───────────────
     const [bruto, setBruto] = useState('')
     const [netto, setNetto] = useState('')
-    const [unitBruto, setUnitBruto] = useState('m')
-    const [unitNetto, setUnitNetto] = useState('m')
     const [activeKeypad, setActiveKeypad] = useState('bruto')
 
     const isOrderMode = selectedCategory === 'order'
@@ -96,43 +106,76 @@ export default function ProductionForm() {
     const panjangCm = parseFloat(orderPanjang) || 0
     const lebarCm = parseFloat(orderLebar) || 0
     const lembar = parseInt(jumlahLembar) || 0
+    const marginCm = Math.max(0, parseFloat(orderMarginCm) || 0)
+    const gapCm = Math.max(0, parseFloat(orderGapCm) || 0)
 
-    // How many prints fit side-by-side in material width?
-    const fitPerBaris = lebarCm > 0 && bahanLebarCm > 0
-        ? Math.max(1, Math.floor(bahanLebarCm / lebarCm))
-        : 0
-    // How many rows of prints are needed?
-    const totalBaris = fitPerBaris > 0 && lembar > 0
-        ? Math.ceil(lembar / fitPerBaris)
-        : 0
-    // Material consumed from the roll
-    const brutoOrderM = totalBaris > 0 ? (totalBaris * panjangCm / 100) : 0
-    // Netto = ideal if no width waste (purely from print length × prints / bahan_width)
-    const nettoOrderM = lembar > 0 && panjangCm > 0 && bahanLebarCm > 0
-        ? (lembar * panjangCm * lebarCm) / (bahanLebarCm * 100)
-        : 0
-    const wasteOrderM = brutoOrderM > 0 ? (brutoOrderM - nettoOrderM) : 0
-    const orderValid = panjangCm > 0 && lebarCm > 0 && lembar > 0 && lebarCm <= bahanLebarCm * 3
+    // Effective usable width after left/right margin.
+    const bahanLebarEffCm = Math.max(0, bahanLebarCm - 2 * marginCm)
+
+    function computeOrientation(printPanjangCm, printLebarCm) {
+        if (!(lembar > 0 && printPanjangCm > 0 && printLebarCm > 0 && bahanLebarEffCm > 0)) return null
+
+        // Fit per baris mempertimbangkan gap antar netto (hanya di arah lebar).
+        // Total used width untuk N kolom: N*printLebar + (N-1)*gap <= bahanLebarEff.
+        const fit = gapCm > 0
+            ? Math.floor((bahanLebarEffCm + gapCm) / (printLebarCm + gapCm))
+            : Math.floor(bahanLebarEffCm / printLebarCm)
+
+        if (!(fit > 0)) return null
+
+        const rows = Math.ceil(lembar / fit)
+        const totalLengthCm = rows * printPanjangCm + (rows - 1) * gapCm
+        const brutoM = rows > 0 ? totalLengthCm / 100 : 0
+
+        // Netto: berdasarkan area cetak (gap diasumsikan tidak menambah area terpakai).
+        const nettoM = (lembar * printPanjangCm * printLebarCm) / (bahanLebarEffCm * 100)
+        const wasteRawM = brutoM - nettoM
+        const wasteM = wasteRawM < 0 ? 0 : wasteRawM
+
+        return { fitPerBaris: fit, totalBaris: rows, brutoOrderM: brutoM, nettoOrderM: nettoM, wasteOrderM: wasteM, wasteRawM, printPanjangCm, printLebarCm }
+    }
+
+    const optNormal = computeOrientation(panjangCm, lebarCm)
+    const optRotated = computeOrientation(lebarCm, panjangCm)
+
+    // Choose the most "efficient" orientation among options that physically fit.
+    const chosen = [optNormal, optRotated].filter(Boolean).sort((a, b) => (a.wasteOrderM - b.wasteOrderM))[0] || null
+
+    const usedRotation = !!(optRotated && chosen && optRotated === chosen)
+
+    const fitPerBaris = chosen?.fitPerBaris || 0
+    const totalBaris = chosen?.totalBaris || 0
+    const brutoOrderM = chosen?.brutoOrderM || 0
+    const nettoOrderM = chosen?.nettoOrderM || 0
+    const wasteOrderM = chosen?.wasteOrderM || 0
+    const wasteRawOrderM = chosen?.wasteRawM ?? 0
+    const calcPanjangCm = chosen?.printPanjangCm || panjangCm
+    const calcLebarCm = chosen?.printLebarCm || lebarCm
+
+    const orderValid = !!chosen && wasteOrderM >= 0
 
     // ── NON-ORDER calculations ────────────────────────────────
-    function toMeters(val, unit) {
-        const n = parseFloat(val)
-        if (isNaN(n)) return NaN
-        return unit === 'cm' ? n / 100 : n
-    }
-    const brutoM = toMeters(bruto, unitBruto)
-    const nettoM = toMeters(netto, unitNetto)
-    const wasteNonOrder = !isNaN(brutoM) && !isNaN(nettoM) && bruto && netto
-        ? (brutoM - nettoM).toFixed(2) : '—'
-    const isWasteNegative = parseFloat(wasteNonOrder) < 0
+    // Fokus cm saja: input bruto & netto selalu dalam cm.
+    const brutoCm = parseFloat(bruto)
+    const nettoCm = parseFloat(netto)
+    const brutoM = Number.isFinite(brutoCm) ? brutoCm / 100 : NaN
+    const nettoM = Number.isFinite(nettoCm) ? nettoCm / 100 : NaN
+
+    const wasteNonOrderRawM = Number.isFinite(brutoM) && Number.isFinite(nettoM)
+        ? (brutoM - nettoM) : NaN
+    const wasteNonOrderCm = !Number.isNaN(wasteNonOrderRawM)
+        ? (wasteNonOrderRawM * 100).toFixed(2) : '—'
+
+    const isWasteNegative = Number.isFinite(wasteNonOrderRawM) && wasteNonOrderRawM < 0
     const nonOrderValid = bruto && netto && !isWasteNegative
 
     // ── Final values for confirm & submit ────────────────────
     const finalBrutoM = isOrderMode ? brutoOrderM : brutoM
     const finalNettoM = isOrderMode ? nettoOrderM : nettoM
-    const finalWaste = isOrderMode
-        ? wasteOrderM.toFixed(2)
-        : wasteNonOrder
+    const finalBrutoCm = Number.isFinite(finalBrutoM) ? finalBrutoM * 100 : 0
+    const finalWasteCm = isOrderMode
+        ? (Number.isFinite(wasteOrderM) ? wasteOrderM * 100 : 0).toFixed(2)
+        : (Number.isFinite(wasteNonOrderRawM) ? wasteNonOrderRawM * 100 : 0).toFixed(2)
 
     // Periksa apakah bahan yang mau dipakai melebihi stok yang ada
     const exceedsStock = selectedMaterial && finalBrutoM > selectedMaterial.total_stock_m
@@ -163,8 +206,8 @@ export default function ProductionForm() {
             notes: notes || null,
         }
         if (isOrderMode) {
-            payload.order_panjang_cm = panjangCm
-            payload.order_lebar_cm = lebarCm
+            payload.order_panjang_cm = calcPanjangCm
+            payload.order_lebar_cm = calcLebarCm
             payload.jumlah_lembar = lembar
         }
 
@@ -311,15 +354,44 @@ export default function ProductionForm() {
                                 <DimInput label="Lebar per lembar" value={orderLebar} onChange={setOrderLebar} suffix="cm" />
                             </div>
                             <div style={{ marginBottom: 12 }}>
-                                <DimInput label="Jumlah Lembar / Copy" value={jumlahLembar} onChange={setJumlahLembar} suffix="lbr" />
+                                <DimInput
+                                    label="Jumlah Lembar / Copy"
+                                    value={jumlahLembar}
+                                    onChange={setJumlahLembar}
+                                    suffix="lbr"
+                                    step="1"
+                                    integer
+                                />
+                            </div>
+                            <div style={{ marginBottom: 12 }}>
+                                <DimInput label="Margin sisi (kiri/kanan)" value={orderMarginCm} onChange={setOrderMarginCm} suffix="cm" />
+                            </div>
+                            <div style={{ marginBottom: 12 }}>
+                                <DimInput label="Gap antar netto" value={orderGapCm} onChange={setOrderGapCm} suffix="cm" />
                             </div>
 
-                            {/* Lebar warning */}
-                            {lebarCm > 0 && bahanLebarCm > 0 && lebarCm > bahanLebarCm && (
+                            {/* Lebar warning / fit & rotasi */}
+                            {panjangCm > 0 && lebarCm > 0 && lembar > 0 && !chosen && (
                                 <div style={{ padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, marginBottom: 12 }}>
                                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--color-danger)', fontSize: 13, fontWeight: 600 }}>
                                         <AlertTriangle size={14} />
-                                        Lebar cetak ({lebarCm}cm) melebihi lebar bahan ({bahanLebarCm}cm)!
+                                        Ukuran cetak tidak muat pada bahan setelah margin. Coba turunkan margin atau kurangi ukuran cetak.
+                                    </div>
+                                </div>
+                            )}
+                            {panjangCm > 0 && lebarCm > 0 && lembar > 0 && optNormal && optRotated && usedRotation && (
+                                <div style={{ padding: '10px 14px', background: 'rgba(30,79,216,0.08)', border: '1px solid rgba(30,79,216,0.25)', borderRadius: 10, marginBottom: 12 }}>
+                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--color-accent)', fontSize: 13, fontWeight: 600 }}>
+                                        <AlertTriangle size={14} />
+                                        Rotasi 90° dipakai supaya layout lebih efisien.
+                                    </div>
+                                </div>
+                            )}
+                            {panjangCm > 0 && lebarCm > 0 && lembar > 0 && !optNormal && optRotated && (
+                                <div style={{ padding: '10px 14px', background: 'rgba(30,79,216,0.08)', border: '1px solid rgba(30,79,216,0.25)', borderRadius: 10, marginBottom: 12 }}>
+                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--color-accent)', fontSize: 13, fontWeight: 600 }}>
+                                        <AlertTriangle size={14} />
+                                        Ukuran tidak muat di orientasi normal, jadi digunakan rotasi 90°.
                                     </div>
                                 </div>
                             )}
@@ -332,10 +404,10 @@ export default function ProductionForm() {
                                     </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                                         {[
-                                            ['Lebar Bahan', `${bahanLebarCm} cm`, 'var(--color-text-secondary)'],
+                                            ['Lebar Bahan Efektif', `${bahanLebarEffCm} cm`, 'var(--color-text-secondary)'],
                                             ['Muat per Baris', `${fitPerBaris} lembar`, 'var(--color-accent)'],
                                             ['Total Baris', `${totalBaris} baris`, '#6366f1'],
-                                            ['Ukuran cetak', `${orderPanjang} × ${orderLebar} cm`, '#f59e0b'],
+                                            ['Ukuran cetak', `${calcPanjangCm} × ${calcLebarCm} cm${usedRotation ? ' (rotasi)' : ''}`, '#f59e0b'],
                                         ].map(([label, val, color]) => (
                                             <div key={label} style={{ background: 'var(--color-bg-secondary)', borderRadius: 8, padding: '10px 12px' }}>
                                                 <div style={{ fontSize: 10, color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>{label}</div>
@@ -346,13 +418,27 @@ export default function ProductionForm() {
                                     <div style={{ display: 'flex', gap: 8, marginTop: 8, paddingTop: 12, borderTop: '1px solid var(--color-border)' }}>
                                         <div style={{ flex: 1, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 10, padding: '12px 16px', textAlign: 'center' }}>
                                             <div style={{ fontSize: 10, color: '#f59e0b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>Bahan Bruto</div>
-                                            <div style={{ fontSize: 22, fontWeight: 900, color: '#f59e0b', letterSpacing: '-0.03em' }}>{brutoOrderM.toFixed(2)} <span style={{ fontSize: 14 }}>m</span></div>
+                                            <div style={{ fontSize: 22, fontWeight: 900, color: '#f59e0b', letterSpacing: '-0.03em' }}>{(brutoOrderM * 100).toFixed(2)} <span style={{ fontSize: 14 }}>cm</span></div>
                                         </div>
                                         <div style={{ flex: 1, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 10, padding: '12px 16px', textAlign: 'center' }}>
                                             <div style={{ fontSize: 10, color: 'var(--color-danger)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>Waste</div>
-                                            <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--color-danger)', letterSpacing: '-0.03em' }}>{wasteOrderM.toFixed(2)} <span style={{ fontSize: 14 }}>m</span></div>
+                                            <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--color-danger)', letterSpacing: '-0.03em' }}>{(wasteOrderM * 100).toFixed(2)} <span style={{ fontSize: 14 }}>cm</span></div>
                                         </div>
                                     </div>
+
+                                {/* Visual layout to clarify posisi netto vs waste */}
+                                <OrderLayoutPreview
+                                    bahanLebarCm={bahanLebarCm}
+                                    panjangCm={calcPanjangCm}
+                                    lebarCm={calcLebarCm}
+                                    lembar={lembar}
+                                    fitPerBaris={fitPerBaris}
+                                    totalBaris={totalBaris}
+                                    brutoOrderM={brutoOrderM}
+                                    wasteOrderM={wasteOrderM}
+                                    marginCm={marginCm}
+                                    gapCm={gapCm}
+                                />
                                 </div>
                             )}
                         </div>
@@ -360,7 +446,7 @@ export default function ProductionForm() {
                         /* ── NON-ORDER MODE: original keypad ───────────── */
                         <div>
                             <div style={{ display: 'flex', gap: 0, marginBottom: 20, background: 'var(--color-bg-secondary)', borderRadius: 10, padding: 4 }}>
-                                {[['bruto', `Bahan Bruto (${unitBruto})`], ['netto', `Panjang Netto (${unitNetto})`]].map(([id, lbl]) => (
+                                {[['bruto', 'Bahan Bruto (cm)'], ['netto', 'Panjang Netto (cm)']].map(([id, lbl]) => (
                                     <button key={id} onClick={() => setActiveKeypad(id)} style={{
                                         flex: 1, padding: '10px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13,
                                         background: activeKeypad === id ? 'var(--color-accent)' : 'transparent',
@@ -370,8 +456,8 @@ export default function ProductionForm() {
                                 ))}
                             </div>
                             {activeKeypad === 'bruto'
-                                ? <NumericKeypad value={bruto} onChange={setBruto} label="Bahan Bruto (Real Terpakai)" unit={unitBruto} onUnitChange={setUnitBruto} />
-                                : <NumericKeypad value={netto} onChange={setNetto} label="Panjang Netto (Gambar)" unit={unitNetto} onUnitChange={setUnitNetto} />
+                                ? <NumericKeypad value={bruto} onChange={setBruto} label="Bahan Bruto (Real Terpakai)" unit="cm" />
+                                : <NumericKeypad value={netto} onChange={setNetto} label="Panjang Netto (Gambar)" unit="cm" />
                             }
 
                             {bruto && netto && (
@@ -383,7 +469,7 @@ export default function ProductionForm() {
                                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                         <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>Waste = Bruto − Netto</span>
                                         <span style={{ fontSize: 16, fontWeight: 800, color: isWasteNegative ? 'var(--color-danger)' : 'var(--color-accent)' }}>
-                                            {wasteNonOrder} m
+                                            {wasteNonOrderCm} cm
                                         </span>
                                     </div>
                                     {isWasteNegative && (
@@ -394,12 +480,20 @@ export default function ProductionForm() {
                                 </div>
                             )}
 
+                            {/* Visualisasi 1D untuk mode non-order */}
+                            <LengthUsagePreview
+                                brutoCm={brutoCm}
+                                nettoCm={nettoCm}
+                                wasteCm={Number.isFinite(wasteNonOrderRawM) ? wasteNonOrderRawM * 100 : NaN}
+                                isWasteNegative={isWasteNegative}
+                            />
+
                             {/* Warning over-stock */}
                             {exceedsStock && (
                                 <div style={{ marginTop: 16, padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10 }}>
                                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--color-danger)', fontSize: 13, fontWeight: 600 }}>
                                         <AlertTriangle size={14} />
-                                        Input Bruto {(finalBrutoM).toFixed(2)}m melebihi stok yang ada ({selectedMaterial.total_stock_m}m).
+                                        Input Bruto {finalBrutoCm.toFixed(2)}cm melebihi stok yang ada ({(selectedMaterial.total_stock_m * 100).toFixed(2)}cm).
                                     </div>
                                 </div>
                             )}
@@ -442,15 +536,15 @@ export default function ProductionForm() {
                             ['Kategori', CATEGORIES.find(c => c.id === selectedCategory)?.label, '#6366f1'],
                             // Order-specific rows
                             ...(isOrderMode ? [
-                                ['Ukuran Cetak', `${orderPanjang} × ${orderLebar} cm`, '#f59e0b'],
+                                ['Ukuran Cetak', `${calcPanjangCm} × ${calcLebarCm} cm${usedRotation ? ' (rotasi)' : ''}`, '#f59e0b'],
                                 ['Jumlah Lembar', `${lembar} lembar`, '#22d3ee'],
                                 ['Muat per Baris', `${fitPerBaris} lembar`, 'var(--color-text-secondary)'],
                             ] : [
-                                ['Bahan Bruto (input)', `${bruto} ${unitBruto}`, '#f59e0b'],
-                                ['Panjang Netto (input)', `${netto} ${unitNetto}`, '#22c55e'],
+                                ['Bahan Bruto (input)', `${bruto} cm`, '#f59e0b'],
+                                ['Panjang Netto (input)', `${netto} cm`, '#22c55e'],
                             ]),
-                            ['Bahan Bruto (m)', `${finalBrutoM.toFixed(2)} m`, '#f59e0b'],
-                            ['Waste', `${finalWaste} m`, '#ef4444'],
+                            ['Bahan Bruto (cm)', `${finalBrutoCm.toFixed(2)} cm`, '#f59e0b'],
+                            ['Waste', `${finalWasteCm} cm`, '#ef4444'],
                         ].map(([label, val, color], i, arr) => (
                             <div key={label} style={{
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
