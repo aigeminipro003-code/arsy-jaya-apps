@@ -65,7 +65,7 @@ function MaintenanceModal({ log, machines, onSave, onClose, saving }) {
                         <textarea style={{ ...inputS, minHeight: 80, resize: 'vertical' }} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Keterangan perbaikan / part yang diganti..." />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
                         <div>
                             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Biaya (Opsional)</label>
                             <NumericStepInput
@@ -153,7 +153,7 @@ function InkModal({ log, machines, onSave, onClose, saving }) {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
                         <div>
                             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Jumlah / Qty *</label>
                             <NumericStepInput
