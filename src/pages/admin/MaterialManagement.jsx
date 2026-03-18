@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useBreakpoint } from '../../hooks/useBreakpoint'
 import { Plus, Edit2, Trash2, PackagePlus, SlidersHorizontal, Eye, EyeOff, X, History, User, ChevronDown, ChevronUp } from 'lucide-react'
 import StockGauge from '../../components/ui/StockGauge'
+import NumericStepInput from '../../components/ui/NumericStepInput'
 
 const EMPTY_STOCK = { panjang_per_roll: '', jumlah_roll: '', satuan_harga: 'per_m', harga_per_satuan: '' }
 const EMPTY_ADJUST = { stok_aktual: '', alasan: '' }
@@ -295,8 +296,8 @@ export default function MaterialManagement() {
                 <Modal title={editModal === 'create' ? 'Tambah Bahan Baru' : 'Edit Bahan'} onClose={() => setEditModal(null)}>
                     <form onSubmit={handleSaveMaterial} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                         <div><label style={labelStyle}>Nama Bahan</label><input required style={inputStyle} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Contoh: Vinyl Gloss" /></div>
-                        <div><label style={labelStyle}>Lebar (cm)</label><input type="number" min="0" step="0.1" required style={inputStyle} value={form.width_cm} onChange={e => setForm({ ...form, width_cm: e.target.value })} placeholder="160" /></div>
-                        <div><label style={labelStyle}>Minimum Stok (m)</label><input type="number" min="0" step="0.1" required style={inputStyle} value={form.min_stock_m} onChange={e => setForm({ ...form, min_stock_m: e.target.value })} placeholder="5" /></div>
+                        <div><label style={labelStyle}>Lebar (cm)</label><NumericStepInput required min="0" step={0.1} value={form.width_cm} onChange={v => setForm({ ...form, width_cm: v })} placeholder="160" /></div>
+                        <div><label style={labelStyle}>Minimum Stok (m)</label><NumericStepInput required min="0" step={0.1} suffix="m" value={form.min_stock_m} onChange={v => setForm({ ...form, min_stock_m: v })} placeholder="5" /></div>
 
                         <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 16 }}>
                             <label style={labelStyle}>Harga Beli Acuan</label>
@@ -320,12 +321,12 @@ export default function MaterialManagement() {
 
                             {form.satuan_harga === 'per_roll' && (
                                 <div style={{ marginBottom: 10 }}>
-                                    <input type="number" min="0.1" step="0.1" required style={inputStyle} value={form.panjang_per_roll} onChange={e => setForm({ ...form, panjang_per_roll: e.target.value })} placeholder="Panjang per 1 Roll (Contoh: 50m)" />
+                                    <NumericStepInput min="0.1" step={0.1} required suffix="m" value={form.panjang_per_roll} onChange={v => setForm({ ...form, panjang_per_roll: v })} placeholder="Panjang per 1 Roll (Contoh: 50m)" />
                                 </div>
                             )}
 
                             <div>
-                                <input type="number" min="0" style={inputStyle} value={form.input_harga} onChange={e => setForm({ ...form, input_harga: e.target.value })} placeholder={form.satuan_harga === 'per_m' ? 'Rp harga per meter' : 'Rp harga total per 1 roll'} />
+                                <NumericStepInput min="0" step="any" bumpStep={10000} prefix="Rp" value={form.input_harga} onChange={v => setForm({ ...form, input_harga: v })} placeholder={form.satuan_harga === 'per_m' ? 'Harga per meter' : 'Harga total per 1 roll'} />
                             </div>
 
                             {form.satuan_harga === 'per_roll' && parseFloat(form.input_harga) > 0 && parseFloat(form.panjang_per_roll) > 0 && (
@@ -347,8 +348,8 @@ export default function MaterialManagement() {
             {stockModal && (
                 <Modal title={`Tambah Stok — ${stockModal.name}`} onClose={() => setStockModal(null)}>
                     <form onSubmit={handleStockIn} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        <div><label style={labelStyle}>Panjang per Roll (m)</label><input type="number" min="0.1" step="0.1" required style={inputStyle} value={stockForm.panjang_per_roll} onChange={e => setStockForm({ ...stockForm, panjang_per_roll: e.target.value })} placeholder="50" /></div>
-                        <div><label style={labelStyle}>Jumlah Roll</label><input type="number" min="1" step="1" required style={inputStyle} value={stockForm.jumlah_roll} onChange={e => setStockForm({ ...stockForm, jumlah_roll: e.target.value })} placeholder="3" /></div>
+                        <div><label style={labelStyle}>Panjang per Roll (m)</label><NumericStepInput min="0.1" step={0.1} required suffix="m" value={stockForm.panjang_per_roll} onChange={v => setStockForm({ ...stockForm, panjang_per_roll: v })} placeholder="50" /></div>
+                        <div><label style={labelStyle}>Jumlah Roll</label><NumericStepInput min="1" step={1} integer required value={stockForm.jumlah_roll} onChange={v => setStockForm({ ...stockForm, jumlah_roll: v })} placeholder="3" /></div>
 
                         {/* Harga Section */}
                         <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 16 }}>
@@ -372,12 +373,14 @@ export default function MaterialManagement() {
                                     </button>
                                 ))}
                             </div>
-                            <input
-                                type="number" min="0" step="any"
-                                style={inputStyle}
+                            <NumericStepInput
+                                min="0"
+                                step="any"
+                                bumpStep={10000}
+                                prefix="Rp"
                                 value={stockForm.harga_per_satuan}
-                                onChange={e => setStockForm({ ...stockForm, harga_per_satuan: e.target.value })}
-                                placeholder={stockForm.satuan_harga === 'per_m' ? 'Rp / meter (kosongkan jika tidak tahu)' : 'Rp / roll'}
+                                onChange={v => setStockForm({ ...stockForm, harga_per_satuan: v })}
+                                placeholder={stockForm.satuan_harga === 'per_m' ? '/ meter (opsional)' : '/ roll'}
                             />
                         </div>
 
@@ -439,12 +442,16 @@ export default function MaterialManagement() {
                         <form onSubmit={handleAdjust} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                             <div>
                                 <label style={labelStyle}>Stok Aktual (hasil hitung fisik)</label>
-                                <input
-                                    type="number" min="0" step="0.01" required
-                                    style={{ ...inputStyle, fontSize: 20, fontWeight: 700, textAlign: 'right' }}
+                                <NumericStepInput
+                                    min="0"
+                                    step={0.01}
+                                    required
+                                    suffix="m"
                                     value={adjustForm.stok_aktual}
-                                    onChange={e => setAdjustForm({ ...adjustForm, stok_aktual: e.target.value })}
+                                    onChange={v => setAdjustForm({ ...adjustForm, stok_aktual: v })}
                                     placeholder={String(prev)}
+                                    inputStyle={{ fontSize: 20, fontWeight: 700, textAlign: 'right' }}
+                                    style={{ borderRadius: 8 }}
                                     autoFocus
                                 />
                             </div>

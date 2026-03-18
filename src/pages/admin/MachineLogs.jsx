@@ -4,6 +4,7 @@ import { useToast } from '../../components/ui/Toast'
 import { useBreakpoint } from '../../hooks/useBreakpoint'
 import { Plus, PenTool, Droplet, CheckCircle, Trash2, Edit2, Search, Calendar, X, Save } from 'lucide-react'
 import { createPortal } from 'react-dom'
+import NumericStepInput from '../../components/ui/NumericStepInput'
 
 function MaintenanceModal({ log, machines, onSave, onClose, saving }) {
     const [form, setForm] = useState({
@@ -15,6 +16,7 @@ function MaintenanceModal({ log, machines, onSave, onClose, saving }) {
         performed_by: log?.performed_by ?? '',
     })
     const isEdit = !!log?.id
+    const { isMobile } = useBreakpoint()
     const inputS = {
         width: '100%', padding: '10px 12px', borderRadius: 8,
         background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)',
@@ -42,7 +44,7 @@ function MaintenanceModal({ log, machines, onSave, onClose, saving }) {
                         </select>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
                         <div>
                             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Tanggal & Waktu *</label>
                             <input type="datetime-local" style={inputS} value={form.maintenance_date} onChange={e => setForm({ ...form, maintenance_date: e.target.value })} required />
@@ -63,13 +65,17 @@ function MaintenanceModal({ log, machines, onSave, onClose, saving }) {
                         <textarea style={{ ...inputS, minHeight: 80, resize: 'vertical' }} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Keterangan perbaikan / part yang diganti..." />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
                         <div>
                             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Biaya (Opsional)</label>
-                            <div style={{ position: 'relative' }}>
-                                <span style={{ position: 'absolute', left: 12, top: 10, fontSize: 13, color: 'var(--color-text-muted)' }}>Rp</span>
-                                <input type="number" style={{ ...inputS, paddingLeft: 36 }} value={form.cost} onChange={e => setForm({ ...form, cost: Number(e.target.value) })} min={0} />
-                            </div>
+                            <NumericStepInput
+                                prefix="Rp"
+                                min="0"
+                                step="any"
+                                bumpStep={10000}
+                                value={form.cost === 0 || form.cost ? String(form.cost) : ''}
+                                onChange={v => setForm({ ...form, cost: v === '' ? 0 : Number(v) || 0 })}
+                            />
                         </div>
                         <div>
                             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Teknisi / Vendor</label>
@@ -104,6 +110,7 @@ function InkModal({ log, machines, onSave, onClose, saving }) {
         replaced_by: log?.replaced_by ?? '',
     })
     const isEdit = !!log?.id
+    const { isMobile } = useBreakpoint()
     const inputS = {
         width: '100%', padding: '10px 12px', borderRadius: 8,
         background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)',
@@ -133,7 +140,7 @@ function InkModal({ log, machines, onSave, onClose, saving }) {
                         </select>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
                         <div>
                             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Tanggal & Waktu *</label>
                             <input type="datetime-local" style={inputS} value={form.replacement_date} onChange={e => setForm({ ...form, replacement_date: e.target.value })} required />
@@ -146,10 +153,16 @@ function InkModal({ log, machines, onSave, onClose, saving }) {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
                         <div>
                             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Jumlah / Qty *</label>
-                            <input type="number" step="0.5" min="0.5" style={inputS} value={form.quantity} onChange={e => setForm({ ...form, quantity: Number(e.target.value) })} required />
+                            <NumericStepInput
+                                required
+                                min="0.5"
+                                step={0.5}
+                                value={String(form.quantity)}
+                                onChange={v => setForm({ ...form, quantity: v === '' ? 0.5 : Math.max(0.5, parseFloat(v) || 0.5) })}
+                            />
                         </div>
                         <div>
                             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Operator</label>

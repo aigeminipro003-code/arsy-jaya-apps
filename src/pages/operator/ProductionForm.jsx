@@ -5,7 +5,8 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../components/ui/Toast'
 import { useBreakpoint } from '../../hooks/useBreakpoint'
 import NumericKeypad from '../../components/ui/NumericKeypad'
-import { ArrowLeft, ChevronRight, CheckCircle, AlertTriangle, Calculator, ArrowUp, ArrowDown } from 'lucide-react'
+import { ArrowLeft, ChevronRight, CheckCircle, AlertTriangle, Calculator } from 'lucide-react'
+import NumericStepInput from '../../components/ui/NumericStepInput'
 import OrderLayoutPreview from '../../components/ui/OrderLayoutPreview'
 import LengthUsagePreview from '../../components/ui/LengthUsagePreview'
 
@@ -36,74 +37,24 @@ function StepIndicator({ current, total }) {
     )
 }
 
-// Compact number input helpers for Order mode
 function DimInput({ label, value, onChange, unit = 'cm', suffix, step = '0.1', min = '0', integer = false }) {
-    const safeValue = value === null || value === undefined ? '' : value
     const stepNum = integer ? 1 : (parseFloat(step) || 0.1)
-    const minNum = parseFloat(min) || 0
-
-    function bump(dir) {
-        const raw = safeValue === '' ? null : parseFloat(safeValue)
-        const base = Number.isFinite(raw) ? raw : minNum
-        let next = base + dir * stepNum
-        if (integer) next = Math.round(next)
-        if (!Number.isFinite(next)) return
-        if (next < minNum) next = minNum
-        onChange(String(next))
-    }
-
     return (
         <div>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
                 {label}
             </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: 10, overflow: 'hidden' }}>
-                <input
-                    type="number" min={min} step={step}
-                    value={safeValue}
-                    onChange={e => {
-                        const raw = e.target.value
-                        if (!integer) return onChange(raw)
-                        if (raw === '') return onChange('')
-                        const n = parseFloat(raw)
-                        if (Number.isNaN(n)) return onChange('')
-                        onChange(String(Math.round(n)))
-                    }}
-                    placeholder="0"
-                    style={{
-                        flex: 1, padding: '12px 14px', background: 'transparent', border: 'none',
-                        color: 'var(--color-text-primary)', fontSize: 20, fontWeight: 700,
-                        outline: 'none', fontVariantNumeric: 'tabular-nums',
-                    }}
-                    className="no-spinner"
-                />
-                {/* Custom stepper integrated into the column */}
-                <div style={{ display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--color-border)', background: 'transparent' }}>
-                    <button
-                        type="button"
-                        onClick={() => bump(1)}
-                        style={{ width: 34, height: 26, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,79,216,0.12)'; e.currentTarget.style.color = 'var(--color-accent)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-secondary)' }}
-                        aria-label="Tambah"
-                    >
-                        <ArrowUp size={14} />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => bump(-1)}
-                        style={{ width: 34, height: 26, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,79,216,0.12)'; e.currentTarget.style.color = 'var(--color-accent)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-secondary)' }}
-                        aria-label="Kurangi"
-                    >
-                        <ArrowDown size={14} />
-                    </button>
-                </div>
-                <span style={{ padding: '0 14px', fontSize: 14, fontWeight: 700, color: 'var(--color-accent)', flexShrink: 0 }}>
-                    {suffix || unit}
-                </span>
-            </div>
+            <NumericStepInput
+                value={value === null || value === undefined ? '' : String(value)}
+                onChange={onChange}
+                min={min}
+                step={integer ? 1 : stepNum}
+                integer={integer}
+                suffix={suffix || unit}
+                placeholder="0"
+                style={{ borderRadius: 10 }}
+                inputStyle={{ fontSize: 20, padding: '12px 14px', fontWeight: 700 }}
+            />
         </div>
     )
 }
@@ -344,7 +295,7 @@ export default function ProductionForm() {
 
             {/* Step 2: Category */}
             {step === 2 && (
-                <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
                     {CATEGORIES.map(c => (
                         <button key={c.id} onClick={() => { setSelectedCategory(c.id); setStep(3) }}
                             style={{
@@ -386,7 +337,7 @@ export default function ProductionForm() {
                                 <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-accent)' }}>Kalkulator Ukuran Cetak</span>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 12 }}>
                                 <DimInput label="Panjang per lembar" value={orderPanjang} onChange={setOrderPanjang} suffix="cm" />
                                 <DimInput label="Lebar per lembar" value={orderLebar} onChange={setOrderLebar} suffix="cm" />
                             </div>
@@ -439,7 +390,7 @@ export default function ProductionForm() {
                                     <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
                                         Hasil Kalkulasi
                                     </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8 }}>
                                         {[
                                             ['Lebar Bahan Efektif', `${bahanLebarEffCm} cm`, 'var(--color-text-secondary)'],
                                             ['Muat per Baris', `${fitPerBaris} lembar`, 'var(--color-accent)'],

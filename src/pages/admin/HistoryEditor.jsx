@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabaseClient'
 import { useToast } from '../../components/ui/Toast'
 import { Save, X, Edit2, FileEdit, PackagePlus, User } from 'lucide-react'
 import { createPortal } from 'react-dom'
+import NumericStepInput from '../../components/ui/NumericStepInput'
 
 const CATEGORY_LABELS = { order: 'Order', tes_warna: 'Tes Warna', maintenance: 'Maintenance', kerusakan: 'Kerusakan' }
 const CATEGORY_COLORS = { order: '#1E4FD8', tes_warna: '#f59e0b', maintenance: '#6366f1', kerusakan: '#ef4444' }
@@ -84,8 +85,12 @@ function EditRow({ log, machines, materials, onSave, onCancel }) {
                         {Object.entries(CATEGORY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </select>
                 </td>
-                <td style={{ padding: '10px 12px' }}><input type="number" step="1" min="0" style={inputS} value={form.panjang_netto} onChange={e => setForm({ ...form, panjang_netto: e.target.value })} title="Input dalam Centimeter (cm)" /></td>
-                <td style={{ padding: '10px 12px' }}><input type="number" step="1" min="0" style={inputS} value={form.bahan_bruto} onChange={e => setForm({ ...form, bahan_bruto: e.target.value })} title="Input dalam Centimeter (cm)" /></td>
+                <td style={{ padding: '10px 12px', minWidth: 88 }} title="Input dalam Centimeter (cm)">
+                    <NumericStepInput compact integer min="0" step={1} suffix="cm" value={form.panjang_netto} onChange={v => setForm({ ...form, panjang_netto: v })} />
+                </td>
+                <td style={{ padding: '10px 12px', minWidth: 88 }} title="Input dalam Centimeter (cm)">
+                    <NumericStepInput compact integer min="0" step={1} suffix="cm" value={form.bahan_bruto} onChange={v => setForm({ ...form, bahan_bruto: v })} />
+                </td>
                 <td style={{ padding: '10px 12px', fontSize: 13, fontWeight: 700, color: 'var(--color-danger)' }}>{waste}</td>
                 <td style={{ padding: '10px 12px' }}>
                     <div style={{ display: 'flex', gap: 6 }}>
@@ -463,8 +468,8 @@ export default function HistoryEditor() {
                                 ℹ️ Anda mengedit riwayat masuk pada <strong>{new Date(editHistoryModal.created_at).toLocaleString('id-ID')}</strong> (Sebelumnya: {oldTotalStr}).<br />
                                 <em>Perubahan kuantitas di sini akan otomatis disesuaikan ke stok saat ini.</em>
                             </div>
-                            <div><label style={labelStyle}>Panjang per Roll (m)</label><input type="number" min="0.1" step="0.1" required style={inputStyle} value={editHistoryForm.panjang_per_roll} onChange={e => setEditHistoryForm({ ...editHistoryForm, panjang_per_roll: e.target.value })} placeholder="50" /></div>
-                            <div><label style={labelStyle}>Jumlah Roll</label><input type="number" min="1" step="1" required style={inputStyle} value={editHistoryForm.jumlah_roll} onChange={e => setEditHistoryForm({ ...editHistoryForm, jumlah_roll: e.target.value })} placeholder="3" /></div>
+                            <div><label style={labelStyle}>Panjang per Roll (m)</label><NumericStepInput min="0.1" step={0.1} required suffix="m" value={editHistoryForm.panjang_per_roll} onChange={v => setEditHistoryForm({ ...editHistoryForm, panjang_per_roll: v })} placeholder="50" /></div>
+                            <div><label style={labelStyle}>Jumlah Roll</label><NumericStepInput min="1" step={1} integer required value={editHistoryForm.jumlah_roll} onChange={v => setEditHistoryForm({ ...editHistoryForm, jumlah_roll: v })} placeholder="3" /></div>
 
                             <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 16 }}>
                                 <label style={labelStyle}>Harga Pembelian</label>
@@ -484,8 +489,14 @@ export default function HistoryEditor() {
                                         </button>
                                     ))}
                                 </div>
-                                <input
-                                    type="number" min="0" step="any" style={inputStyle} value={editHistoryForm.harga_per_satuan} onChange={e => setEditHistoryForm({ ...editHistoryForm, harga_per_satuan: e.target.value })} placeholder={editHistoryForm.satuan_harga === 'per_m' ? 'Rp / meter (kosongkan jika tidak tahu)' : 'Rp / roll'}
+                                <NumericStepInput
+                                    min="0"
+                                    step="any"
+                                    bumpStep={10000}
+                                    prefix="Rp"
+                                    value={editHistoryForm.harga_per_satuan}
+                                    onChange={v => setEditHistoryForm({ ...editHistoryForm, harga_per_satuan: v })}
+                                    placeholder={editHistoryForm.satuan_harga === 'per_m' ? '/ meter (opsional)' : '/ roll'}
                                 />
                             </div>
 

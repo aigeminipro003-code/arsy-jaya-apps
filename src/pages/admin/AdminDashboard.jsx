@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabaseClient'
 import { useNavigate } from 'react-router-dom'
 import { TrendingDown, Package, AlertTriangle, AlertOctagon, ChevronRight, Banknote, Ruler, ShoppingCart, PackagePlus, SlidersHorizontal, TrendingUp, MonitorPlay, CheckCircle2, Settings, X, Save } from 'lucide-react'
 import StockGauge from '../../components/ui/StockGauge'
+import NumericStepInput from '../../components/ui/NumericStepInput'
 import { useBreakpoint } from '../../hooks/useBreakpoint'
 
 function GlassCard({ children, accentColor }) {
@@ -610,14 +611,16 @@ export default function AdminDashboard() {
                         <div style={{ padding: 20 }}>
                             <div style={{ marginBottom: 20 }}>
                                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 8 }}>Target Produksi Harian (Netto)</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <input
-                                        type="number"
+                                <div style={{ flex: 1, maxWidth: 280 }}>
+                                    <NumericStepInput
                                         value={newTarget}
-                                        onChange={e => setNewTarget(e.target.value)}
-                                        style={{ flex: 1, maxWidth: 200, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--color-text-primary)', fontSize: 14 }}
+                                        onChange={setNewTarget}
+                                        min="1"
+                                        integer
+                                        step={1}
+                                        suffix="meter"
+                                        inputStyle={{ fontSize: 14, fontWeight: 600 }}
                                     />
-                                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-muted)' }}>meter</span>
                                 </div>
                                 <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 8 }}>Target ini akan dijadikan baseline 100% pada Progress Bar di Halaman Riwayat Tim (Operator).</p>
                             </div>
