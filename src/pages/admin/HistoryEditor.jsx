@@ -52,15 +52,15 @@ const labelStyle = { display: 'block', fontSize: 11, fontWeight: 700, color: 'va
 
 function EditRow({ log, machines, materials, onSave, onCancel }) {
     const [form, setForm] = useState({
-        panjang_netto: log.panjang_netto,
-        bahan_bruto: log.bahan_bruto,
+        panjang_netto: String(parseFloat(log.panjang_netto || 0) * 100),
+        bahan_bruto: String(parseFloat(log.bahan_bruto || 0) * 100),
         category: log.category,
         notes: log.notes || '',
         material_id: log.material_id,
         machine_id: log.machine_id,
         edit_reason: '',
     })
-    const waste = (parseFloat(form.bahan_bruto) - parseFloat(form.panjang_netto)).toFixed(2)
+    const waste = (parseFloat(form.bahan_bruto || 0) - parseFloat(form.panjang_netto || 0)).toFixed(1)
     const reasonMissing = !form.edit_reason.trim()
 
     const inputS = { padding: '5px 8px', borderRadius: 6, background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border-bright)', color: 'var(--color-text-primary)', fontSize: 12, minWidth: 0, width: '100%' }
@@ -84,8 +84,8 @@ function EditRow({ log, machines, materials, onSave, onCancel }) {
                         {Object.entries(CATEGORY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </select>
                 </td>
-                <td style={{ padding: '10px 12px' }}><input type="number" step="0.01" min="0" style={inputS} value={form.panjang_netto} onChange={e => setForm({ ...form, panjang_netto: e.target.value })} /></td>
-                <td style={{ padding: '10px 12px' }}><input type="number" step="0.01" min="0" style={inputS} value={form.bahan_bruto} onChange={e => setForm({ ...form, bahan_bruto: e.target.value })} /></td>
+                <td style={{ padding: '10px 12px' }}><input type="number" step="1" min="0" style={inputS} value={form.panjang_netto} onChange={e => setForm({ ...form, panjang_netto: e.target.value })} title="Input dalam Centimeter (cm)" /></td>
+                <td style={{ padding: '10px 12px' }}><input type="number" step="1" min="0" style={inputS} value={form.bahan_bruto} onChange={e => setForm({ ...form, bahan_bruto: e.target.value })} title="Input dalam Centimeter (cm)" /></td>
                 <td style={{ padding: '10px 12px', fontSize: 13, fontWeight: 700, color: 'var(--color-danger)' }}>{waste}</td>
                 <td style={{ padding: '10px 12px' }}>
                     <div style={{ display: 'flex', gap: 6 }}>
@@ -194,8 +194,9 @@ export default function HistoryEditor() {
             return
         }
         const { error } = await supabase.from('production_logs').update({
-            panjang_netto: parseFloat(form.panjang_netto),
-            bahan_bruto: parseFloat(form.bahan_bruto),
+            // Konversi input cm kita kembalikan menjadi satuan standard meter di database
+            panjang_netto: parseFloat(form.panjang_netto) / 100,
+            bahan_bruto: parseFloat(form.bahan_bruto) / 100,
             category: form.category,
             notes: form.notes || null,
             machine_id: form.machine_id,
@@ -309,9 +310,9 @@ export default function HistoryEditor() {
                                     <th style={thStyle}>Mesin</th>
                                     <th style={thStyle}>Material</th>
                                     <th style={thStyle}>Kategori</th>
-                                    <th style={thStyle}>Netto (m)</th>
-                                    <th style={thStyle}>Bruto (m)</th>
-                                    <th style={thStyle}>Waste (m)</th>
+                                    <th style={thStyle}>Netto (cm)</th>
+                                    <th style={thStyle}>Bruto (cm)</th>
+                                    <th style={thStyle}>Waste (cm)</th>
                                     <th style={thStyle}>Aksi</th>
                                 </tr>
                             </thead>
@@ -348,9 +349,9 @@ export default function HistoryEditor() {
                                                         {CATEGORY_LABELS[log.category] ?? log.category}
                                                     </span>
                                                 </td>
-                                                <td style={{ ...tdStyle, fontWeight: 600 }}>{log.panjang_netto}</td>
-                                                <td style={{ ...tdStyle, fontWeight: 600 }}>{log.bahan_bruto}</td>
-                                                <td style={{ ...tdStyle, fontWeight: 700, color: 'var(--color-danger)' }}>{log.waste}</td>
+                                                <td style={{ ...tdStyle, fontWeight: 600 }}>{(log.panjang_netto * 100).toFixed(1)}</td>
+                                                <td style={{ ...tdStyle, fontWeight: 600 }}>{(log.bahan_bruto * 100).toFixed(1)}</td>
+                                                <td style={{ ...tdStyle, fontWeight: 700, color: 'var(--color-danger)' }}>{(log.waste * 100).toFixed(1)}</td>
                                                 <td style={tdStyle}>
                                                     <div style={{ display: 'flex', gap: 6 }}>
                                                         <button onClick={() => setEditingId(log.id)} title="Edit" style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)', borderRadius: 6, padding: '5px 7px', cursor: 'pointer', display: 'flex' }}><Edit2 size={12} /></button>
@@ -390,7 +391,7 @@ export default function HistoryEditor() {
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr style={{ background: 'var(--color-bg-secondary)' }}>
-                                    {['Waktu', 'Operator', 'Bahan', 'Roll', 'Pjg/Roll', 'Total (m)', 'Harga/Satuan', 'Total Harga', 'Aksi'].map(h => (
+                                    {['Waktu', 'Operator', 'Bahan', 'Roll', 'Pjg/Roll (cm)', 'Total (cm)', 'Harga/Satuan', 'Total Harga', 'Aksi'].map(h => (
                                         <th key={h} style={thStyle}>{h}</th>
                                     ))}
                                 </tr>
@@ -420,8 +421,8 @@ export default function HistoryEditor() {
                                             </td>
                                             <td style={{ ...tdStyle, fontWeight: 600 }}>{l.materials?.name ?? '—'}</td>
                                             <td style={{ ...tdStyle, textAlign: 'center' }}>{l.rolls}</td>
-                                            <td style={{ ...tdStyle, textAlign: 'center' }}>{l.panjang_per_roll}m</td>
-                                            <td style={{ ...tdStyle, fontWeight: 700, color: '#22c55e' }}>+{Number(l.quantity_m).toLocaleString('id-ID')}m</td>
+                                            <td style={{ ...tdStyle, textAlign: 'center' }}>{(Number(l.panjang_per_roll) * 100).toLocaleString('id-ID', { maximumFractionDigits: 1 })}</td>
+                                            <td style={{ ...tdStyle, fontWeight: 700, color: '#22c55e' }}>+{(Number(l.quantity_m) * 100).toLocaleString('id-ID', { maximumFractionDigits: 1 })}</td>
                                             <td style={{ ...tdStyle, fontSize: 11, color: 'var(--color-text-secondary)' }}>{hargaLabel}</td>
                                             <td style={{ ...tdStyle, fontWeight: 700 }}>{totalLabel}</td>
                                             <td style={tdStyle}>
@@ -450,7 +451,7 @@ export default function HistoryEditor() {
                     return hargaSatuanHistory * totalStockHistory
                 })()
                 const hargaPerMeterHistory = totalStockHistory && totalHargaHistory ? totalHargaHistory / totalStockHistory : null
-                const oldTotalStr = `${editHistoryModal.quantity_m}m`
+                const oldTotalStr = `${(Number(editHistoryModal.quantity_m) * 100).toLocaleString('id-ID', { maximumFractionDigits: 1 })} cm`
 
                 return (
                     <Modal title={`Edit Riwayat Masuk — ${editHistoryModal.materials?.name ?? 'Bahan'}`} onClose={() => setEditHistoryModal(null)}>
@@ -481,7 +482,7 @@ export default function HistoryEditor() {
                                     ))}
                                 </div>
                                 <input
-                                    type="number" min="0" step="100" style={inputStyle} value={editHistoryForm.harga_per_satuan} onChange={e => setEditHistoryForm({ ...editHistoryForm, harga_per_satuan: e.target.value })} placeholder={editHistoryForm.satuan_harga === 'per_m' ? 'Rp / meter (kosongkan jika tidak tahu)' : 'Rp / roll'}
+                                    type="number" min="0" step="any" style={inputStyle} value={editHistoryForm.harga_per_satuan} onChange={e => setEditHistoryForm({ ...editHistoryForm, harga_per_satuan: e.target.value })} placeholder={editHistoryForm.satuan_harga === 'per_m' ? 'Rp / meter (kosongkan jika tidak tahu)' : 'Rp / roll'}
                                 />
                             </div>
 
