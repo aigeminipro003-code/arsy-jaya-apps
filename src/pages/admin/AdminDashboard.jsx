@@ -186,20 +186,20 @@ export default function AdminDashboard() {
                 if (dailyStats[dayKey]) {
                     dailyStats[dayKey].Net += net
                     dailyStats[dayKey].Waste += w
-                }
 
-                if (dayKey === todayStr) {
-                    todayNet += net
-                    todayWaste += w
-                    todayBruto += b
-
-                    // Scoreboard accumulation
+                    // Scoreboard accumulation for the last 7 days (pekan ini)
                     const opName = l.profiles?.display_name || 'Unknown'
                     const hwId = l.machines?.name || 'Unknown Machine'
                     if (!operators[opName]) operators[opName] = { name: opName, machine: hwId, net: 0, waste: 0, bruto: 0 }
                     operators[opName].net += net
                     operators[opName].waste += w
                     operators[opName].bruto += b
+                }
+
+                if (dayKey === todayStr) {
+                    todayNet += net
+                    todayWaste += w
+                    todayBruto += b
                 } else if (dayKey === yesterdayStr) {
                     yesterdayWaste += w
                 }
@@ -568,10 +568,10 @@ export default function AdminDashboard() {
                     {/* Team Leaderboard */}
                     <div style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: 20, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                            <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>Operator Terbaik Hari Ini</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>Operator Terbaik Pekan ini</span>
                         </div>
                         {leaderboard.length === 0
-                            ? <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>Belum ada data produksi hari ini</div>
+                            ? <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>Belum ada data produksi pekan ini</div>
                             : <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
                                 {leaderboard.map((op, i) => (
                                     <div key={op.name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, background: i === 0 ? 'rgba(34,197,94,0.05)' : 'var(--color-bg-secondary)', border: i === 0 ? '1px solid rgba(34,197,94,0.2)' : '1px solid transparent', borderRadius: 12 }}>
