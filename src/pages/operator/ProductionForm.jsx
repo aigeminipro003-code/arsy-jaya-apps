@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../components/ui/Toast'
 import { useBreakpoint } from '../../hooks/useBreakpoint'
 import NumericKeypad from '../../components/ui/NumericKeypad'
-import { ArrowLeft, ChevronRight, CheckCircle, AlertTriangle, Calculator } from 'lucide-react'
+import { ArrowLeft, ChevronRight, CheckCircle, AlertTriangle, Calculator, ArrowUp, ArrowDown } from 'lucide-react'
 import OrderLayoutPreview from '../../components/ui/OrderLayoutPreview'
 import LengthUsagePreview from '../../components/ui/LengthUsagePreview'
 
@@ -39,6 +39,19 @@ function StepIndicator({ current, total }) {
 // Compact number input helpers for Order mode
 function DimInput({ label, value, onChange, unit = 'cm', suffix, step = '0.1', min = '0', integer = false }) {
     const safeValue = value === null || value === undefined ? '' : value
+    const stepNum = integer ? 1 : (parseFloat(step) || 0.1)
+    const minNum = parseFloat(min) || 0
+
+    function bump(dir) {
+        const raw = safeValue === '' ? null : parseFloat(safeValue)
+        const base = Number.isFinite(raw) ? raw : minNum
+        let next = base + dir * stepNum
+        if (integer) next = Math.round(next)
+        if (!Number.isFinite(next)) return
+        if (next < minNum) next = minNum
+        onChange(String(next))
+    }
+
     return (
         <div>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
@@ -62,7 +75,31 @@ function DimInput({ label, value, onChange, unit = 'cm', suffix, step = '0.1', m
                         color: 'var(--color-text-primary)', fontSize: 20, fontWeight: 700,
                         outline: 'none', fontVariantNumeric: 'tabular-nums',
                     }}
+                    className="no-spinner"
                 />
+                {/* Custom stepper integrated into the column */}
+                <div style={{ display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--color-border)', background: 'transparent' }}>
+                    <button
+                        type="button"
+                        onClick={() => bump(1)}
+                        style={{ width: 34, height: 26, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,79,216,0.12)'; e.currentTarget.style.color = 'var(--color-accent)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-secondary)' }}
+                        aria-label="Tambah"
+                    >
+                        <ArrowUp size={14} />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => bump(-1)}
+                        style={{ width: 34, height: 26, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,79,216,0.12)'; e.currentTarget.style.color = 'var(--color-accent)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-secondary)' }}
+                        aria-label="Kurangi"
+                    >
+                        <ArrowDown size={14} />
+                    </button>
+                </div>
                 <span style={{ padding: '0 14px', fontSize: 14, fontWeight: 700, color: 'var(--color-accent)', flexShrink: 0 }}>
                     {suffix || unit}
                 </span>

@@ -153,6 +153,18 @@ body,
   min-width: 44px;
 }
 
+/* Hide native number spinners (up/down arrows) so we can use custom steppers */
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* Mobile responsive grid utilities */
 .grid-auto-1 {
   display: grid;
