@@ -373,7 +373,7 @@ export default function MaterialManagement() {
                                 ))}
                             </div>
                             <input
-                                type="number" min="0" step="100"
+                                type="number" min="0" step="any"
                                 style={inputStyle}
                                 value={stockForm.harga_per_satuan}
                                 onChange={e => setStockForm({ ...stockForm, harga_per_satuan: e.target.value })}

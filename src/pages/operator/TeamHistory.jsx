@@ -6,6 +6,12 @@ import { Clock, Filter, FileEdit, PackagePlus, User, RefreshCw, Activity, Target
 const CATEGORY_LABELS = { order: 'Order', tes_warna: 'Tes Warna', maintenance: 'Maintenance', kerusakan: 'Kerusakan' }
 const CATEGORY_COLORS = { order: '#1E4FD8', tes_warna: '#f59e0b', maintenance: '#6366f1', kerusakan: '#ef4444' }
 
+/** Tampilan riwayat: DB dalam meter → tampil cm */
+function fmtCm(m) {
+    const cm = (parseFloat(m) || 0) * 100
+    return `${cm.toLocaleString('id-ID', { maximumFractionDigits: 1 })} cm`
+}
+
 function timeAgo(dateString) {
     const date = new Date(dateString)
     const now = new Date()
@@ -145,8 +151,8 @@ export default function TeamHistory() {
                         <div>
                             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target Produksi Hari Ini</div>
                             <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-text-primary)', marginTop: 2, display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                                {todayProgress.toLocaleString('id-ID')}
-                                <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', fontWeight: 600 }}>/ {todayTarget.toLocaleString('id-ID')} m</span>
+                                {(todayProgress * 100).toLocaleString('id-ID', { maximumFractionDigits: 0 })}
+                                <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', fontWeight: 600 }}>/ {(todayTarget * 100).toLocaleString('id-ID', { maximumFractionDigits: 0 })} cm</span>
                             </div>
                         </div>
                     </div>
@@ -234,10 +240,10 @@ export default function TeamHistory() {
                                                 <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: `${color}18`, color }}>{CATEGORY_LABELS[cat] ?? cat}</span>
                                                 <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600 }}>{log.materials?.name} {log.materials?.width_cm ? `(${log.materials.width_cm}cm)` : ''}</span>
                                             </div>
-                                            <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
-                                                <div>Bruto <strong style={{ color: 'var(--color-text-primary)' }}>{log.bahan_bruto}m</strong></div>
-                                                <div>Netto <strong style={{ color: 'var(--color-text-primary)' }}>{log.panjang_netto}m</strong></div>
-                                                <div>Waste <strong style={{ color: 'var(--color-danger)' }}>{log.waste}m</strong></div>
+                                            <div style={{ display: 'flex', gap: 12, fontSize: 12, flexWrap: 'wrap' }}>
+                                                <div>Bruto <strong style={{ color: 'var(--color-text-primary)' }}>{fmtCm(log.bahan_bruto)}</strong></div>
+                                                <div>Netto <strong style={{ color: 'var(--color-text-primary)' }}>{fmtCm(log.panjang_netto)}</strong></div>
+                                                <div>Waste <strong style={{ color: 'var(--color-danger)' }}>{fmtCm(log.waste)}</strong></div>
                                             </div>
                                             {log.notes && <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 8, padding: '6px 10px', background: 'var(--color-bg-secondary)', borderRadius: 6 }}>📝 {log.notes}</div>}
                                             {log.edit_reason && (
@@ -307,10 +313,10 @@ export default function TeamHistory() {
                                             <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: 'rgba(34,197,94,0.12)', color: '#22c55e', fontWeight: 700 }}>
                                                 Stok Masuk
                                             </span>
-                                            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600 }}>{log.rolls} roll × {log.panjang_per_roll}m</span>
+                                            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600 }}>{log.rolls} roll × {fmtCm(log.panjang_per_roll)}</span>
                                         </div>
                                         <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
-                                            <div>Total <strong style={{ color: '#22c55e' }}>+{Number(log.quantity_m).toLocaleString('id-ID')} m</strong></div>
+                                            <div>Total <strong style={{ color: '#22c55e' }}>+{fmtCm(log.quantity_m)}</strong></div>
                                         </div>
                                         {(hargaLabel || totalLabel) && (
                                             <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 8, padding: '6px 10px', background: 'var(--color-bg-secondary)', borderRadius: 6 }}>

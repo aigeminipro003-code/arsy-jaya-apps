@@ -51,6 +51,11 @@ function SectionCard({ children, title, icon: Icon, style = {} }) {
 const CATEGORY_LABELS = { order: 'Order', tes_warna: 'Tes Warna', maintenance: 'Maintenance', kerusakan: 'Kerusakan' }
 const CATEGORY_COLORS = { order: '#1E4FD8', tes_warna: '#f59e0b', maintenance: '#6366f1', kerusakan: '#ef4444' }
 
+function fmtCm(m) {
+    const cm = (parseFloat(m) || 0) * 100
+    return `${cm.toLocaleString('id-ID', { maximumFractionDigits: 1 })} cm`
+}
+
 export default function OperatorDashboard() {
     const navigate = useNavigate()
     const { profile } = useAuth()
@@ -179,8 +184,8 @@ export default function OperatorDashboard() {
                                                 {CATEGORY_LABELS[log.category] ?? log.category}
                                             </span>
                                             <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
-                                                Bruto: <strong style={{ color: 'var(--color-text-primary)' }}>{log.bahan_bruto}m</strong>
-                                                {' '}· Netto: <strong style={{ color: 'var(--color-text-primary)' }}>{log.panjang_netto}m</strong>
+                                                Bruto: <strong style={{ color: 'var(--color-text-primary)' }}>{fmtCm(log.bahan_bruto)}</strong>
+                                                {' '}· Netto: <strong style={{ color: 'var(--color-text-primary)' }}>{fmtCm(log.panjang_netto)}</strong>
                                             </span>
                                         </div>
                                     </div>
