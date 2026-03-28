@@ -7,6 +7,12 @@
 
 **Arsy Jaya APPS Pro** adalah sistem manajemen produksi dan inventaris kustom yang dirancang khusus untuk industri percetakan. Aplikasi ini berfokus pada presisi pelacakan bahan (Net vs Bruto) dan efisiensi tim secara real-time.
 
+### Dokumentasi teknis & SOP perubahan
+
+- **[Panduan agen AI / developer](docs/PANDUAN_AGEN_AI.md)** — arsitektur, routing, Supabase, logika bisnis, pitfall.
+- **[SOP pencatatan perubahan](docs/SOP_PERUBAHAN.md)** — kapan dan bagaimana mencatat fix/fitur yang sudah terverifikasi.
+- **[Changelog](docs/CHANGELOG.md)** — riwayat perubahan terkurasi.
+
 ---
 
 ## 🚀 Fitur Utama
