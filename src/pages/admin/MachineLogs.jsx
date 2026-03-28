@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
+import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../components/ui/Toast'
 import { useBreakpoint } from '../../hooks/useBreakpoint'
 import { Plus, PenTool, Droplet, CheckCircle, Trash2, Edit2, Search, Calendar, X, Save } from 'lucide-react'
@@ -194,6 +195,7 @@ function InkModal({ log, machines, onSave, onClose, saving }) {
 // Tab 1: MaintenanceLog
 function MaintenanceLog() {
     const { toast } = useToast()
+    const { user, isAdmin } = useAuth()
     const { isMobile } = useBreakpoint()
     const [machines, setMachines] = useState([])
     const [logs, setLogs] = useState([])
@@ -211,9 +213,11 @@ function MaintenanceLog() {
             const { data: mData } = await supabase.from('machines').select('id, name').order('name')
             setMachines(mData || [])
 
+            // Hindari embed profiles:created_by — jika FK tidak ke profiles.id, seluruh query gagal
+            // dan daftar kosong meski insert sukses.
             const { data: lData, error } = await supabase
                 .from('trx_maintenance_log')
-                .select(`*, machines(name), profiles:created_by(display_name)`)
+                .select('*, machines(name)')
                 .order('maintenance_date', { ascending: false })
                 .limit(50)
 
@@ -221,7 +225,8 @@ function MaintenanceLog() {
             setLogs(lData || [])
         } catch (err) {
             console.error(err)
-            // if relationship fails or table not exists, just ignore for now (schema might be missing)
+            setLogs([])
+            toast(err.message || 'Gagal memuat riwayat maintenance', 'error')
         } finally {
             setLoading(false)
         }
@@ -233,9 +238,18 @@ function MaintenanceLog() {
 
     async function handleSave(form, id) {
         if (!form.machine_id) return toast('Harap pilih mesin', 'error')
+        if (!user?.id) return toast('Sesi tidak valid, silakan login ulang', 'error')
         setSaving(true)
         try {
-            const payload = { ...form }
+            const payload = {
+                machine_id: form.machine_id,
+                maintenance_date: form.maintenance_date,
+                maintenance_type: form.maintenance_type,
+                description: form.description?.trim() ? form.description.trim() : null,
+                cost: Number(form.cost) || 0,
+                performed_by: form.performed_by?.trim() ? form.performed_by.trim() : null,
+            }
+            if (!id) payload.created_by = user.id
             if (id) {
                 const { error } = await supabase.from('trx_maintenance_log').update(payload).eq('id', id)
                 if (error) throw error
@@ -310,14 +324,16 @@ function MaintenanceLog() {
                                 {log.description && <div style={{ fontSize: 13, marginTop: 4 }}>{log.description}</div>}
                                 {log.cost > 0 && <div style={{ fontSize: 12, fontWeight: 600, color: '#f59e0b', marginTop: 4 }}>Rp {log.cost.toLocaleString('id-ID')} · {log.performed_by || 'Internal'}</div>}
                             </div>
-                            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                                <button onClick={() => setModal(log)} title="Edit" style={{ display: 'flex', alignItems: 'center', gap: 6, height: 32, padding: '0 10px', borderRadius: 8, background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)', cursor: 'pointer' }}>
-                                    <Edit2 size={13} />
-                                </button>
-                                <button onClick={() => handleDelete(log.id)} title="Hapus" style={{ display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 10px', borderRadius: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444', cursor: 'pointer' }}>
-                                    <Trash2 size={13} />
-                                </button>
-                            </div>
+                            {isAdmin ? (
+                                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                                    <button onClick={() => setModal(log)} title="Edit" style={{ display: 'flex', alignItems: 'center', gap: 6, height: 32, padding: '0 10px', borderRadius: 8, background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)', cursor: 'pointer' }}>
+                                        <Edit2 size={13} />
+                                    </button>
+                                    <button onClick={() => handleDelete(log.id)} title="Hapus" style={{ display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 10px', borderRadius: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444', cursor: 'pointer' }}>
+                                        <Trash2 size={13} />
+                                    </button>
+                                </div>
+                            ) : null}
                         </div>
                     ))}
                 </div>
@@ -329,6 +345,7 @@ function MaintenanceLog() {
 // Tab 2: InkLog
 function InkLog() {
     const { toast } = useToast()
+    const { user, isAdmin } = useAuth()
     const { isMobile } = useBreakpoint()
     const [machines, setMachines] = useState([])
     const [logs, setLogs] = useState([])
@@ -348,7 +365,7 @@ function InkLog() {
 
             const { data: lData, error } = await supabase
                 .from('trx_ink_log')
-                .select(`*, machines(name), profiles:created_by(display_name)`)
+                .select('*, machines(name)')
                 .order('replacement_date', { ascending: false })
                 .limit(50)
 
@@ -356,6 +373,8 @@ function InkLog() {
             setLogs(lData || [])
         } catch (err) {
             console.error(err)
+            setLogs([])
+            toast(err.message || 'Gagal memuat riwayat log tinta', 'error')
         } finally {
             setLoading(false)
         }
@@ -367,9 +386,19 @@ function InkLog() {
 
     async function handleSave(form, id) {
         if (!form.machine_id) return toast('Harap pilih mesin', 'error')
+        if (!user?.id) return toast('Sesi tidak valid, silakan login ulang', 'error')
         setSaving(true)
         try {
-            const payload = { ...form }
+            const qty = typeof form.quantity === 'number' ? form.quantity : parseFloat(form.quantity)
+            const payload = {
+                machine_id: form.machine_id,
+                replacement_date: form.replacement_date,
+                ink_color: form.ink_color,
+                quantity: Number.isFinite(qty) ? qty : 1,
+                notes: form.notes?.trim() ? form.notes.trim() : null,
+                replaced_by: form.replaced_by?.trim() ? form.replaced_by.trim() : null,
+            }
+            if (!id) payload.created_by = user.id
             if (id) {
                 const { error } = await supabase.from('trx_ink_log').update(payload).eq('id', id)
                 if (error) throw error
@@ -466,14 +495,16 @@ function InkLog() {
                                     )}
                                 </div>
 
-                                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                                    <button onClick={() => setModal(log)} title="Edit" style={{ display: 'flex', alignItems: 'center', gap: 6, height: 32, padding: '0 10px', borderRadius: 8, background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)', cursor: 'pointer' }}>
-                                        <Edit2 size={13} />
-                                    </button>
-                                    <button onClick={() => handleDelete(log.id)} title="Hapus" style={{ display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 10px', borderRadius: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444', cursor: 'pointer' }}>
-                                        <Trash2 size={13} />
-                                    </button>
-                                </div>
+                                {isAdmin ? (
+                                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                                        <button onClick={() => setModal(log)} title="Edit" style={{ display: 'flex', alignItems: 'center', gap: 6, height: 32, padding: '0 10px', borderRadius: 8, background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)', cursor: 'pointer' }}>
+                                            <Edit2 size={13} />
+                                        </button>
+                                        <button onClick={() => handleDelete(log.id)} title="Hapus" style={{ display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 10px', borderRadius: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444', cursor: 'pointer' }}>
+                                            <Trash2 size={13} />
+                                        </button>
+                                    </div>
+                                ) : null}
                             </div>
                         )
                     })}
