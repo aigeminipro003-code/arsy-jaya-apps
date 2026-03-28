@@ -13,6 +13,7 @@ import HistoryEditor from './pages/admin/HistoryEditor'
 import CSVExporter from './pages/admin/CSVExporter'
 import MachineManagement from './pages/admin/MachineManagement'
 import MachineLogs from './pages/admin/MachineLogs'
+import PwaUpdatePrompt from './components/pwa/PwaUpdatePrompt.jsx'
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { session, isAdmin, loading } = useAuth()
@@ -59,6 +60,7 @@ export default function App() {
         </Routes>
       </BrowserRouter>
       <ToastContainer />
+      <PwaUpdatePrompt />
     </>
   )
 }
